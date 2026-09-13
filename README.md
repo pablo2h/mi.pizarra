@@ -65,9 +65,58 @@ docker compose pull
 docker compose up -d
 ```
 
-## Acceso remoto
+## Exponerlo con Cloudflare Tunnel
 
-Para acceder desde fuera de tu red local, lo más simple es poner un
-reverse proxy con TLS delante (Caddy, Traefik o Nginx + Let's Encrypt)
-apuntando al puerto configurado en `VIKUNJA_PORT`, y actualizar
-`VIKUNJA_PUBLIC_URL` en `.env` con el dominio real.
+Para acceder desde fuera de tu red sin abrir puertos en el router, se
+puede usar [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/).
+Hay dos formas:
+
+### Opción A: túnel rápido de prueba (sin cuenta, URL temporal)
+
+Útil para probar ya mismo. La URL cambia cada vez que lo reiniciás, no
+sirve para dejarlo fijo.
+
+```bash
+docker run --rm cloudflare/cloudflared:latest tunnel --url http://host.docker.internal:3456
+```
+
+Te va a imprimir una URL tipo `https://algo-random.trycloudflare.com`
+en los logs. En Linux, si `host.docker.internal` no resuelve, corré
+`cloudflared` directo en el host apuntando a `http://localhost:3456`
+en lugar de usar Docker para este comando.
+
+### Opción B: túnel permanente con URL fija (recomendado para dejarlo)
+
+Requiere una cuenta gratuita de Cloudflare (no hace falta tener un
+dominio propio, Cloudflare te puede dar un subdominio tipo
+`*.cfargotunnel.com`, o podés usar uno tuyo si lo tenés).
+
+1. Entrar a [Cloudflare Zero Trust](https://one.dash.cloudflare.com/) →
+   **Networks → Tunnels → Create a tunnel** → elegir "Cloudflared".
+2. Ponerle un nombre (ej. `mi-pizarra`) y copiar el **token** que te
+   muestra (es un string largo).
+3. Pegarlo en `.env` como `CLOUDFLARE_TUNNEL_TOKEN`.
+4. En la misma pantalla de configuración del túnel, agregar un
+   **Public Hostname**:
+   - Subdominio/dominio: el que quieras (propio o el que te ofrezca
+     Cloudflare).
+   - Service: `HTTP` → `vikunja:3456` (nombre del servicio en la red
+     interna de Docker Compose).
+5. Levantar el túnel junto con el resto del stack:
+
+   ```bash
+   docker compose --profile tunnel up -d
+   ```
+
+6. Actualizar `VIKUNJA_PUBLIC_URL` en `.env` con la URL pública elegida
+   y reiniciar: `docker compose up -d vikunja`.
+
+Con esto la URL queda fija, el túnel se reconecta solo si se cae, y no
+necesitás abrir ningún puerto en tu red.
+
+## Alternativa: reverse proxy propio
+
+Si preferís no depender de Cloudflare, otra opción es poner un reverse
+proxy con TLS delante (Caddy, Traefik o Nginx + Let's Encrypt)
+apuntando al puerto configurado en `VIKUNJA_PORT`, con el puerto 443
+abierto en tu router.

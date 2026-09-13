@@ -34,6 +34,20 @@ services:
     volumes:
       - vikunja-data:/app/vikunja/files
 
+  # Túnel de Cloudflare para exponer Vikunja con una URL pública sin abrir
+  # puertos en tu router. Es opcional: solo se levanta con
+  # `docker compose --profile tunnel up -d`. Ver README para cómo obtener
+  # el CLOUDFLARE_TUNNEL_TOKEN.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    profiles: ["tunnel"]
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - vikunja
+
 volumes:
   db-data:
   vikunja-data:
