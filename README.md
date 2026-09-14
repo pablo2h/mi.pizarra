@@ -34,11 +34,14 @@ conecta a esta misma instancia.
    ```
 
 3. Abrir `http://localhost:3456` (o el puerto/host que hayas configurado)
-   y crear tu usuario administrador desde la pantalla de registro.
+   y acceder a la pantalla "Create account". Creá tu usuario administrador
+   ahí ingresando username, email y contraseña.
 
-4. Una vez creado tu usuario, si es de uso personal, deshabilitá el
-   registro público (ya viene deshabilitado por defecto en este
-   `docker-compose.yml` vía `VIKUNJA_SERVICE_ENABLEREGISTRATION=false`).
+4. Una vez creado tu usuario y si es de uso personal, podés deshabilitá el
+   registro público si querés prevenir que otros creen cuentas. Para hacerlo,
+   modificá `docker-compose.yml`:
+   - Cambiar `VIKUNJA_SERVICE_ENABLEREGISTRATION: "true"` a `"false"`
+   - Ejecutar `docker compose up -d` para aplicar el cambio
 
 ## Datos y backups
 
